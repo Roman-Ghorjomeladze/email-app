@@ -47,3 +47,22 @@ export const sendEmail = async (req, reply) => {
 		throw new AppError("Failed to send emai", { error });
 	}
 };
+
+/**
+ * Controller to delete an email by id.
+ *
+ * @param {import('fastify').FastifyRequest} req - Fastify request object containing email payload in the body.
+ * @param {import('fastify').FastifyReply} reply - Fastify reply object for sending the response.
+ * @returns {Promise<object>} Sends the status message to confirm deletion
+ *
+ * @throws {AppError} If deleting the email fails.
+ */
+export const deleteEmailById = async (req, reply) => {
+	try {
+		const { id } = req.params;
+		await EmailService.deleteById(id);
+		return reply.code(200).send({ status: "OK" });
+	} catch (error) {
+		throw new AppError("Failed to delete email", { error });
+	}
+};

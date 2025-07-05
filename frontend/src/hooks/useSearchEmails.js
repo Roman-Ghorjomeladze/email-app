@@ -12,7 +12,12 @@ export const useSearchEmails = () => {
 	const [loading, setLoading] = useState(false);
 
 	const addEmailInSidebar = useCallback((email) => {
-		setEmails((prev) => [email, ...prev]);
+		setEmails((prev) => {
+			if (prev.length === 0) {
+				setSelectedEmail(email);
+			}
+			return [email, ...prev];
+		});
 	}, []);
 
 	useEffect(() => {
@@ -54,6 +59,29 @@ export const useSearchEmails = () => {
 		});
 	};
 
+	const deleteEmailById = async (id) => {
+		try {
+			const res = await fetch(apiUrl(`emails/${id}`), {
+				method: "DELETE",
+			});
+
+			if (!res.ok) {
+				const error = await res.json();
+				console.error(error);
+			} else {
+				setEmails((prev) => {
+					const updatedEmails = prev.filter((email) => email.id !== id);
+					if (selectedEmail?.id === id) {
+						setSelectedEmail(updatedEmails?.[0] || null);
+					}
+					return updatedEmails;
+				});
+			}
+		} catch (err) {
+			console.error("Delete email error:", err);
+		}
+	};
+
 	return {
 		handleNextPage,
 		handlePrevPage,
@@ -61,6 +89,7 @@ export const useSearchEmails = () => {
 		setComposeOpen,
 		setSelectedEmail,
 		setQuery,
+		deleteEmailById,
 		pagination,
 		isComposeOpen,
 		selectedEmail,

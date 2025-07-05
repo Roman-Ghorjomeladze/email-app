@@ -62,6 +62,16 @@ class EmailService_ {
 	async getById(id) {
 		return await DB.table(this.tableName).where({ id }).first();
 	}
+
+	/**
+	 * Deletes a single email by its ID.
+	 *
+	 * @param {number} id - The unique ID of the email to delete.
+	 * @returns {Promise<number>} The count of deleted items.
+	 */
+	async deleteById(id) {
+		return await DB.table(this.tableName).where({ id }).delete();
+	}
 }
 
 export const EmailService = new EmailService_();

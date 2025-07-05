@@ -7,7 +7,7 @@ import { registerRoutes } from "./src/routes/index.js";
 
 dotenv.config();
 
-const PORT = Number(process.env.PORT);
+const PORT = Number(process.env.PORT) || 3001;
 
 /**
  * @type {import('fastify').FastifyInstance} Instance of Fastify
@@ -17,7 +17,7 @@ const fastify = Fastify({
 	logger: true,
 });
 
-fastify.register(cors, { origin: "*" });
+fastify.register(cors, { origin: "*", methods: ["GET", "POST", "DELETE", "PUT"] });
 fastify.register(fastifyHelmet);
 fastify.register(registerRoutes);
 

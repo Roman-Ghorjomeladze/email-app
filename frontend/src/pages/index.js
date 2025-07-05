@@ -16,6 +16,7 @@ export default function HomePage() {
 		setComposeOpen,
 		setQuery,
 		setSelectedEmail,
+		deleteEmailById,
 		isComposeOpen,
 		selectedEmail,
 		emails,
@@ -32,6 +33,7 @@ export default function HomePage() {
 				onSearch={setQuery}
 				onNextPage={handleNextPage}
 				onPrevPage={handlePrevPage}
+				onDeleteEmail={deleteEmailById}
 				currentPage={pagination?.currentPage || 1}
 				totalPages={pagination?.totalPages || 1}
 				hasNextPage={pagination?.hasNextPage}

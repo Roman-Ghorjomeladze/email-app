@@ -8,6 +8,7 @@ export const EmailSidebar = (props) => {
 		selectedId,
 		onSelect,
 		onSearch,
+		onDeleteEmail,
 		onNextPage,
 		onPrevPage,
 		currentPage,
@@ -50,8 +51,14 @@ export const EmailSidebar = (props) => {
 							No Emails
 						</Typography>
 					)}
-					{emails.map((email) => (
-						<SidebarItem key={email.id} email={email} selectedId={selectedId} onSelect={onSelect} />
+					{emails?.map((email) => (
+						<SidebarItem
+							key={email.id}
+							onDeleteEmail={onDeleteEmail}
+							email={email}
+							selectedId={selectedId}
+							onSelect={onSelect}
+						/>
 					))}
 				</List>
 			</Box>
