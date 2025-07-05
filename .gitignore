@@ -1,0 +1,10 @@
+.idea
+/**/node_modules
+.vscode
+/**/.env
+.DS_Store
+
+/**/*.sqlite
+/**/*.sqlite3
+
+/**/yarn.lock
