@@ -16,6 +16,7 @@ export const EmailSidebar = (props) => {
 		hasNextPage,
 		hasPrevPage,
 		loading,
+		query,
 	} = props;
 
 	return (
@@ -34,6 +35,7 @@ export const EmailSidebar = (props) => {
 				variant="outlined"
 				placeholder="Search..."
 				size="small"
+				value={query}
 				fullWidth
 				onChange={(e) => onSearch(e.target.value)}
 				sx={{ mb: 2 }}

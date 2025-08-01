@@ -1,7 +1,25 @@
 import { DB } from "../db/index.js";
-
+import { SearchQueryTypes } from "./email.constants.js";
 class EmailService_ {
 	tableName = "emails";
+
+	/**
+	 * Checks search keyword and returns the search type
+	 *
+	 * @param {string} searchKeyword - The search keyword to look for in emails.
+	 * @returns {SearchQueryTypes}
+	 */
+	getSearchType(searchKeyword) {
+		const searchByToRegex = /^to:.+/;
+		switch (true) {
+			case searchByToRegex.test(searchKeyword): {
+				return SearchQueryTypes.SearchByTo;
+			}
+			default: {
+				return SearchQueryTypes.Basic;
+			}
+		}
+	}
 
 	/**
 	 * Searches emails by keyword across multiple fields (to, cc, bcc, subject, body),
@@ -14,13 +32,24 @@ class EmailService_ {
 	 */
 	async search(query, page = 1, limit = 20) {
 		const offset = (page - 1) * limit;
-
-		const baseQuery = DB.table(this.tableName)
-			.whereLike("to", `%${query}%`)
-			.orWhereLike("cc", `%${query}%`)
-			.orWhereLike("bcc", `%${query}%`)
-			.orWhereLike("subject", `%${query}%`)
-			.orWhereLike("body", `%${query}%`);
+		let baseQuery;
+		let queryType = this.getSearchType(query);
+		switch (queryType) {
+			case SearchQueryTypes.Basic: {
+				baseQuery = DB.table(this.tableName)
+					.whereLike("to", `%${query}%`)
+					.orWhereLike("cc", `%${query}%`)
+					.orWhereLike("bcc", `%${query}%`)
+					.orWhereLike("subject", `%${query}%`)
+					.orWhereLike("body", `%${query}%`);
+				break;
+			}
+			case SearchQueryTypes.SearchByTo: {
+				const [_, toEmailAddress] = query.split(":");
+				baseQuery = DB.table(this.tableName).whereLike("to", `%${toEmailAddress || ""}%`);
+				break;
+			}
+		}
 
 		const totalCountResult = await baseQuery.clone().count("* as count").first();
 		const totalItems = totalCountResult ? totalCountResult.count : 0;

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { apiUrl } from "@/utils/helpers/urlBuilder";
 
@@ -10,6 +11,7 @@ export const useSearchEmails = () => {
 	const [page, setPage] = useState(1);
 	const [pagination, setPagination] = useState(null);
 	const [loading, setLoading] = useState(false);
+	const router = useRouter();
 
 	const addEmailInSidebar = useCallback((email) => {
 		setEmails((prev) => {
@@ -20,13 +22,21 @@ export const useSearchEmails = () => {
 		});
 	}, []);
 
+	useLayoutEffect(() => {
+		const url = new URL(window.location.href);
+		console.log({ search: url.searchParams.get("search") || "" });
+		setQuery(url.searchParams.get("search") || "");
+	}, []);
+
 	useEffect(() => {
 		const timeout = setTimeout(() => {
 			setLoading(true);
 			fetch(apiUrl(`emails/search?q=${query}&page=${page}&perPage=25`))
 				.then((res) => res.json())
 				.then((res) => {
-					if (res.data?.length != 0) {
+					const noDataFound = res.data?.length == 0 && res.pagination.currentPage == 1;
+					const isEmptyResponse = res.data?.length != 0;
+					if (noDataFound || isEmptyResponse) {
 						setEmails(res.data);
 						setPagination(res.pagination);
 						const initialEmail = res?.data?.[0];
@@ -82,14 +92,21 @@ export const useSearchEmails = () => {
 		}
 	};
 
+	const onSearch = (value) => {
+		setQuery(value);
+		router.replace(`?search=${value}`);
+	};
+
 	return {
 		handleNextPage,
 		handlePrevPage,
 		addEmailInSidebar,
 		setComposeOpen,
 		setSelectedEmail,
+		onSearch,
 		setQuery,
 		deleteEmailById,
+		query,
 		pagination,
 		isComposeOpen,
 		selectedEmail,

@@ -14,9 +14,10 @@ export default function HomePage() {
 		handlePrevPage,
 		addEmailInSidebar,
 		setComposeOpen,
-		setQuery,
+		onSearch,
 		setSelectedEmail,
 		deleteEmailById,
+		query,
 		isComposeOpen,
 		selectedEmail,
 		emails,
@@ -30,7 +31,7 @@ export default function HomePage() {
 				emails={emails}
 				selectedId={selectedEmail?.id}
 				onSelect={setSelectedEmail}
-				onSearch={setQuery}
+				onSearch={onSearch}
 				onNextPage={handleNextPage}
 				onPrevPage={handlePrevPage}
 				onDeleteEmail={deleteEmailById}
@@ -39,6 +40,7 @@ export default function HomePage() {
 				hasNextPage={pagination?.hasNextPage}
 				hasPrevPage={pagination?.hasPrevPage}
 				loading={loading}
+				query={query}
 			/>
 			<Box flex={1} position="relative" display="flex" flexDirection="column">
 				{selectedEmail && <EmailDetail email={selectedEmail} />}

@@ -4,7 +4,7 @@ const { DB } = require("../src/db/index.js");
  * @returns { Promise<void> }
  */
 exports.up = function (knex) {
-	return DB.instance.schema.createTable("emails", (table) => {
+	return knex.schema.createTable("emails", (table) => {
 		table.increments("id").primary();
 		table.text("to");
 		table.text("cc");

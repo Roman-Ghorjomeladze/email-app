@@ -3,8 +3,9 @@ import knex from "knex";
 const db = knex({
 	client: "sqlite3",
 	connection: {
-		filename: "./db.sqlite",
+		filename: "db.sqlite",
 	},
+	useNullAsDefault: true,
 });
 
 class DB_ {
