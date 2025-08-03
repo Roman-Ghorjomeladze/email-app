@@ -1,8 +1,11 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useState } from "react";
 import Head from "next/head";
 
 import "@/styles/globals.css";
 
 export default function App({ Component, pageProps }) {
+	const [queryClient] = useState(() => new QueryClient());
 	return (
 		<>
 			<Head>
@@ -12,7 +15,9 @@ export default function App({ Component, pageProps }) {
 				<link rel="icon" href="/favicon.png" />
 			</Head>
 			<main>
-				<Component {...pageProps} />
+				<QueryClientProvider client={queryClient}>
+					<Component {...pageProps} />
+				</QueryClientProvider>
 			</main>
 		</>
 	);

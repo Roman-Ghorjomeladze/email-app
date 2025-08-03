@@ -1,94 +1,79 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useLayoutEffect, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { apiUrl } from "@/utils/helpers/urlBuilder";
+import { useDebounce } from "@/hooks/useDebounce"; // custom debounce hook you should implement
 
 export const useSearchEmails = () => {
 	const [selectedEmail, setSelectedEmail] = useState(null);
 	const [isComposeOpen, setComposeOpen] = useState(false);
-	const [emails, setEmails] = useState([]);
 	const [query, setQuery] = useState("");
 	const [page, setPage] = useState(1);
-	const [pagination, setPagination] = useState(null);
-	const [loading, setLoading] = useState(false);
 	const router = useRouter();
-
-	const addEmailInSidebar = useCallback((email) => {
-		setEmails((prev) => {
-			if (prev.length === 0) {
-				setSelectedEmail(email);
-			}
-			return [email, ...prev];
-		});
-	}, []);
+	const queryClient = useQueryClient();
+	const debouncedQuery = useDebounce(query, 500);
 
 	useLayoutEffect(() => {
 		const url = new URL(window.location.href);
-		console.log({ search: url.searchParams.get("search") || "" });
 		setQuery(url.searchParams.get("search") || "");
 	}, []);
 
-	useEffect(() => {
-		const timeout = setTimeout(() => {
-			setLoading(true);
-			fetch(apiUrl(`emails/search?q=${query}&page=${page}&perPage=25`))
-				.then((res) => res.json())
-				.then((res) => {
-					const noDataFound = res.data?.length == 0 && res.pagination.currentPage == 1;
-					const isEmptyResponse = res.data?.length != 0;
-					if (noDataFound || isEmptyResponse) {
-						setEmails(res.data);
-						setPagination(res.pagination);
-						const initialEmail = res?.data?.[0];
-						setSelectedEmail(initialEmail);
-					}
-				})
-				.catch(console.error)
-				.finally(() => {
-					setLoading(false);
-				});
-		}, 500);
-
-		return () => clearTimeout(timeout);
-	}, [query, page]);
-
-	useEffect(() => {
+	useLayoutEffect(() => {
 		setPage(1);
-	}, [query]);
+	}, [debouncedQuery]);
+
+	const { data, isFetching, isLoading, error } = useQuery({
+		queryKey: ["emails", { query: debouncedQuery, page }],
+		queryFn: async () => {
+			const res = await fetch(apiUrl(`emails/search?q=${debouncedQuery}&page=${page}&perPage=25`));
+			if (!res.ok) throw new Error("Failed to fetch emails");
+			return res.json();
+		},
+		keepPreviousData: true,
+		refetchOnMount: true,
+	});
+
+	useEffect(() => {
+		if (data?.data && data.data.length > 0) {
+			setSelectedEmail(data.data[0]);
+		}
+	}, [data?.data]);
+
+	const deleteEmailMutation = useMutation({
+		mutationFn: async (id) => {
+			const res = await fetch(apiUrl(`emails/${id}`), { method: "DELETE" });
+			if (!res.ok) {
+				const error = await res.json();
+				throw new Error(error.message || "Delete failed");
+			}
+			return id;
+		},
+		onSuccess: (deletedId) => {
+			queryClient.setQueryData(["emails", { query: debouncedQuery, page }], (oldData) => {
+				if (!oldData) return oldData;
+				const updated = oldData.data.filter((e) => e.id !== deletedId);
+				if (selectedEmail?.id === deletedId) {
+					setSelectedEmail(updated?.[0] || null);
+				}
+				return { ...oldData, data: updated };
+			});
+		},
+		onError: (err) => {
+			console.error("Delete email error:", err);
+		},
+	});
 
 	const handleNextPage = () => {
-		setPage((p) => {
-			const isLastPage = p >= pagination.totalPages;
-			return isLastPage ? p : p + 1;
-		});
+		if (!data?.pagination) return;
+		if (page < data.pagination.totalPages) {
+			setPage((p) => p + 1);
+		}
 	};
 
 	const handlePrevPage = () => {
-		setPage((p) => {
-			return p <= 1 ? p : p - 1;
-		});
-	};
-
-	const deleteEmailById = async (id) => {
-		try {
-			const res = await fetch(apiUrl(`emails/${id}`), {
-				method: "DELETE",
-			});
-
-			if (!res.ok) {
-				const error = await res.json();
-				console.error(error);
-			} else {
-				setEmails((prev) => {
-					const updatedEmails = prev.filter((email) => email.id !== id);
-					if (selectedEmail?.id === id) {
-						setSelectedEmail(updatedEmails?.[0] || null);
-					}
-					return updatedEmails;
-				});
-			}
-		} catch (err) {
-			console.error("Delete email error:", err);
+		if (page > 1) {
+			setPage((p) => p - 1);
 		}
 	};
 
@@ -96,6 +81,20 @@ export const useSearchEmails = () => {
 		setQuery(value);
 		router.replace(`?search=${value}`);
 	};
+
+	const addEmailInSidebar = useCallback(
+		(email) => {
+			queryClient.setQueryData(["emails", { query: debouncedQuery, page }], (oldData) => {
+				if (!oldData) return { data: [email], pagination: { currentPage: 1, totalPages: 1 } };
+				const updated = [email, ...oldData.data];
+				if (oldData.data.length === 0) {
+					setSelectedEmail(email);
+				}
+				return { ...oldData, data: updated };
+			});
+		},
+		[debouncedQuery, page, queryClient]
+	);
 
 	return {
 		handleNextPage,
@@ -105,12 +104,13 @@ export const useSearchEmails = () => {
 		setSelectedEmail,
 		onSearch,
 		setQuery,
-		deleteEmailById,
+		deleteEmailById: deleteEmailMutation.mutateAsync,
 		query,
-		pagination,
+		pagination: data?.pagination || null,
 		isComposeOpen,
 		selectedEmail,
-		emails,
-		loading,
+		emails: data?.data || [],
+		loading: isLoading || isFetching,
+		error,
 	};
 };

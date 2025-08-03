@@ -1,6 +1,7 @@
 "use client";
 
 import { Box } from "@mui/material";
+import { useState } from "react";
 
 import { ComposeEmailFormModal } from "@/components/ComposeEmail/Modal";
 import { ComposeButton } from "@/components/ComposeEmail/Button";
